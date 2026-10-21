@@ -1,4 +1,4 @@
-# Event Planning System — Database Models
+# Event Planning System 
 
 The first version of the system will use **5 models**:
 
