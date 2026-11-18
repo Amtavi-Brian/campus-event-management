@@ -2,14 +2,17 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
+from django.contrib.auth.models import Group
+
+
+
+from django.contrib.auth.models import Group
+from rest_framework import serializers
+from .models import User
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
-
-    password = serializers.CharField(
-        write_only=True,
-        min_length=8
-    )
+    password = serializers.CharField(write_only=True, min_length=8)
 
     class Meta:
         model = User
@@ -26,7 +29,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
+
+        student_group = Group.objects.get(name='Student')
+        user.groups.add(student_group)
+
         return user
+
 
 
 
@@ -65,3 +73,9 @@ class LogoutSerializer(serializers.Serializer):
 
         except Exception:
             raise serializers.ValidationError({"refresh": "Invalid or expired refresh token."})
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone_number', 'profile_picture', 'created_at', 'updated_at']
