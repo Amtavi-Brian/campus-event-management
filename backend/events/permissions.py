@@ -33,3 +33,16 @@ class IsAdminOrOrganizerOwner(BasePermission):
             and obj.organizer == request.user
         )
 
+class IsAdminOrReadOnly(BasePermission):
+    """
+    Everyone can view categories.
+    Only admins can create, update, or delete categories.
+    
+    """
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+
+        return (request.user.is_authenticated 
+        and request.user.is_staff
+        )

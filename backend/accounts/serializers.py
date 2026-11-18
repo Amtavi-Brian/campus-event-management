@@ -1,13 +1,10 @@
+
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import User
 from django.contrib.auth.models import Group
 
-
-
-from django.contrib.auth.models import Group
-from rest_framework import serializers
 from .models import User
 
 
@@ -36,9 +33,54 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return user
 
 
-
-
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+
+    username_field = 'email'
+
+    email = serializers.EmailField()
+    password = serializers.CharField(
+        write_only=True,
+        style={'input_type': 'password'}
+    )
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        try:
+            user = User.objects.get(email__iexact=email)
+        except User.DoesNotExist:
+            raise AuthenticationFailed(
+                'Invalid email or password.'
+            )
+
+        if not user.check_password(password) or not user.is_active:
+            raise AuthenticationFailed(
+                'Invalid email or password.'
+            )
+
+        refresh = self.get_token(user)
+
+        data = {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'role': (
+                    'ADMIN' if user.is_staff
+                    else 'ORGANIZER' if user.groups.filter(
+                        name='Organizer'
+                    ).exists()
+                    else 'STUDENT'
+                ),
+            },
+        }
+
+        return data
 
     @classmethod
     def get_token(cls, user):
@@ -49,19 +91,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         return token
 
-    def validate(self, attrs):
-        data = super().validate(attrs)
-
-        data['user'] = {
-            'id': self.user.id,
-            'username': self.user.username,
-            'email': self.user.email,
-            'first_name': self.user.first_name,
-            'last_name': self.user.last_name,
-        }
-
-        return data
-
 
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
@@ -70,12 +99,23 @@ class LogoutSerializer(serializers.Serializer):
         try:
             token = RefreshToken(self.validated_data['refresh'])
             token.blacklist()
-
         except Exception:
-            raise serializers.ValidationError({"refresh": "Invalid or expired refresh token."})
+            raise serializers.ValidationError({
+                'refresh': 'Invalid or expired refresh token.'
+            })
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone_number', 'profile_picture', 'created_at', 'updated_at']
+        fields = [
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'phone_number',
+            'profile_picture',
+            'created_at',
+            'updated_at',
+        ]

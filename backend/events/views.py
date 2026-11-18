@@ -2,11 +2,11 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from .models import Event, EventCategory
 from .serializers import EventSerializer, EventCategorySerializer
-from .permissions import IsAdminOrOrganizerOwner
+from .permissions import IsAdminOrOrganizerOwner, IsAdminOrReadOnly
 class EventCategoryViewSet(viewsets.ModelViewSet):
     queryset = EventCategory.objects.all()
     serializer_class = EventCategorySerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAdminOrReadOnly]
 
 
 class EventViewSet(viewsets.ModelViewSet):

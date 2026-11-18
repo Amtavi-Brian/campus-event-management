@@ -1,22 +1,45 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import '../../styles/auth/AuthPage.css'
+import { useNavigate } from 'react-router-dom'
+import useAuth from '../../hooks/useAuth'
 
 function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [formData, setFormData] = useState({ email: '', password: '' })
+  const navigate = useNavigate()
+  const { login } = useAuth()
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // TODO: wire up to auth service once backend integration begins
-    console.log('Login submit', { ...formData, rememberMe })
-  }
+
+    setError('')
+    setIsSubmitting(true)
+
+    try {
+        await login({
+            email: formData.email,
+            password: formData.password,
+        })
+
+        navigate('/dashboard')
+    } catch (error) {
+        setError(
+            error.response?.data?.detail ||
+            'Login failed. Please check your email and password.'
+        )
+    } finally {
+        setIsSubmitting(false)
+    }
+}
 
   return (
     <div className="auth-page">
@@ -126,10 +149,19 @@ function Login() {
                 Forgot password?
               </a>
             </div>
+            {error && (
+    <p className="auth-error">
+        {error}
+    </p>
+)}
 
-            <button type="submit" className="btn btn-primary btn-block">
-              Login
-            </button>
+          <button
+    type="submit"
+    className="btn btn-primary btn-block"
+    disabled={isSubmitting}
+>
+    {isSubmitting ? 'Logging in...' : 'Login'}
+</button>
           </form>
 
           <p className="auth-page__footer">
