@@ -1,9 +1,11 @@
+
 import { useState } from 'react'
 import '../../styles/events/EventForm.css'
 
 const defaultValues = {
   title: '',
   description: '',
+  category: '',
   date: '',
   time: '',
   location: '',
@@ -12,28 +14,49 @@ const defaultValues = {
 
 function EventForm({
   initialValues = defaultValues,
+  categories = [],
   onSubmit,
   onCancel,
   submitLabel = 'Create Event',
 }) {
-  const [formData, setFormData] = useState({ ...defaultValues, ...initialValues })
+  const [formData, setFormData] = useState({
+    ...defaultValues,
+    ...initialValues,
+  })
+
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    onSubmit?.(formData)
+
+    if (isSubmitting) return
+
+    try {
+      setIsSubmitting(true)
+      await onSubmit?.(formData)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
     <form onSubmit={handleSubmit} className="event-form">
+
+      {/* Event Title */}
       <div className="form-group">
         <label htmlFor="title" className="form-label">
           Event Title *
         </label>
+
         <input
           id="title"
           name="title"
@@ -46,10 +69,12 @@ function EventForm({
         />
       </div>
 
+      {/* Event Description */}
       <div className="form-group">
         <label htmlFor="description" className="form-label">
           Description *
         </label>
+
         <textarea
           id="description"
           name="description"
@@ -62,11 +87,37 @@ function EventForm({
         />
       </div>
 
+      {/* Event Category */}
+      <div className="form-group">
+        <label htmlFor="category" className="form-label">
+          Event Category *
+        </label>
+
+        <select
+          id="category"
+          name="category"
+          required
+          value={formData.category}
+          onChange={handleChange}
+          className="form-input"
+        >
+          <option value="">Select an event category</option>
+
+          {categories.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Date and Time */}
       <div className="form-row form-group">
         <div>
           <label htmlFor="date" className="form-label">
             Date *
           </label>
+
           <input
             id="date"
             name="date"
@@ -82,6 +133,7 @@ function EventForm({
           <label htmlFor="time" className="form-label">
             Time *
           </label>
+
           <input
             id="time"
             name="time"
@@ -94,11 +146,13 @@ function EventForm({
         </div>
       </div>
 
+      {/* Location and Maximum Guests */}
       <div className="form-row form-group">
         <div>
           <label htmlFor="location" className="form-label">
             Location *
           </label>
+
           <input
             id="location"
             name="location"
@@ -115,6 +169,7 @@ function EventForm({
           <label htmlFor="maxGuests" className="form-label">
             Maximum Guests
           </label>
+
           <input
             id="maxGuests"
             name="maxGuests"
@@ -128,14 +183,26 @@ function EventForm({
         </div>
       </div>
 
+      {/* Form Actions */}
       <div className="form-actions">
-        <button type="button" onClick={onCancel} className="btn btn-secondary">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="btn btn-secondary"
+          disabled={isSubmitting}
+        >
           Cancel
         </button>
-        <button type="submit" className="btn btn-primary">
-          {submitLabel}
+
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Please wait...' : submitLabel}
         </button>
       </div>
+
     </form>
   )
 }

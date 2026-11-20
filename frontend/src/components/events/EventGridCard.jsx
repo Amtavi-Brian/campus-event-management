@@ -29,10 +29,17 @@ function EventGridCard({ event }) {
         </p>
         <p className="event-grid-card__meta">📍 {location}</p>
 
-        <div className="event-grid-card__stats">
-          <span>✅ {tasksRemaining} tasks</span>
-          <span>👥 {guests} guests</span>
-        </div>
+        {(tasksRemaining !== undefined || guests !== undefined) && (
+      <div className="event-grid-card__stats">
+        {tasksRemaining !== undefined && (
+        <span>✅ {tasksRemaining} tasks</span>
+      )}
+
+    {guests !== undefined && (
+      <span>👥 {guests} guests</span>
+    )}
+  </div>
+)}
 
         <Link
           to={`/dashboard/events/${id}`}
