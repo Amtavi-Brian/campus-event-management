@@ -18,6 +18,7 @@ class IsAdminOrEventOrganizer(BasePermission):
             and (
                 request.user.is_staff
                 or request.user.groups.filter(name='Organizer').exists()
+                or request.user.organized_events.exists()
             )
         )
 
@@ -29,6 +30,6 @@ class IsAdminOrEventOrganizer(BasePermission):
             return True
 
         return (
-            request.user.groups.filter(name='Organizer').exists()
-            and obj.event.organizer == request.user
+            obj.event.organizer == request.user
+            or obj.assigned_to == request.user
         )

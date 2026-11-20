@@ -4,7 +4,7 @@ from .views import GuestViewSet
 router = DefaultRouter()
 
 router.register(
-    r'guests',
+    r'',
     GuestViewSet,
     basename='guest'
 )

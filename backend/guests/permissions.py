@@ -19,18 +19,10 @@ class GuestPermission(BasePermission):
         if request.user.is_staff:
             return True
 
-        is_organizer = request.user.groups.filter(
-            name='Organizer'
-        ).exists()
+        if obj.event.organizer == request.user:
+            return True
 
-        is_student = request.user.groups.filter(
-            name='Student'
-        ).exists()
-
-        if is_organizer:
-            return obj.event.organizer == request.user
-
-        if is_student:
-            return obj.user == request.user
+        if obj.user == request.user:
+            return True
 
         return False

@@ -18,6 +18,12 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
 
+        if self.request.user.is_authenticated and not self.request.user.is_staff:
+            from django.db.models import Q
+            queryset = queryset.filter(
+                Q(event__organizer=self.request.user) | Q(assigned_to=self.request.user)
+            )
+
         event_id = self.request.query_params.get("event_id")
         assigned_to = self.request.query_params.get("assigned_to")
         status = self.request.query_params.get("status")

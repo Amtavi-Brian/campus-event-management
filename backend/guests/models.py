@@ -4,7 +4,7 @@ class Guest(models.Model):
     class RSVPStatus(models.TextChoices):
         ACCEPTED = 'ACCEPTED', 'Accepted'
         PENDING = 'PENDING', 'Pending'
-        not_going = 'NOT_GOING', 'Not Going'
+        NOT_GOING = 'NOT_GOING', 'Not Going'
 
     event = models.ForeignKey(
         'events.Event',
@@ -31,7 +31,7 @@ class Guest(models.Model):
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
-    update_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
 
     def __str__(self):

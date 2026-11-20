@@ -22,15 +22,14 @@ class GuestViewSet(viewsets.ModelViewSet):
 
         if user.is_staff:
             pass
-
-        elif user.groups.filter(name='Organizer').exists():
+        elif user.groups.filter(name='Organizer').exists() or user.organized_events.exists():
             queryset = queryset.filter(event__organizer=user)
-
         elif user.groups.filter(name='Student').exists():
             queryset = queryset.filter(user=user)
-
         else:
-            queryset = queryset.none()
+            # If user has no explicit group, show their organized events' guests or their own RSVPs
+            from django.db.models import Q
+            queryset = queryset.filter(Q(event__organizer=user) | Q(user=user))
 
         event_id = self.request.query_params.get("event_id")
 
@@ -43,65 +42,41 @@ class GuestViewSet(viewsets.ModelViewSet):
         user = self.request.user
         event = serializer.validated_data['event']
 
-        is_organizer = user.groups.filter(
-            name='Organizer'
-        ).exists()
-
-        is_student = user.groups.filter(
-            name='Student'
-        ).exists()
-
-        if user.is_staff:
-            serializer.save()
-            return
-
-        if is_organizer and event.organizer == user:
-            serializer.save(user=None)
-            return
-
-        if is_student:
-            serializer.save(
-                user=user,
-                name=user.get_full_name() or user.username,
-                email=user.email,
-                phone_number=user.phone_number or ''
-            )
-            return
-        raise PermissionDenied(
-            "You are not allowed to create a guest for this event."
+        is_organizer = (
+            user.is_staff
+            or user.groups.filter(name='Organizer').exists()
+            or event.organizer == user
         )
-    
+
+        if user.is_staff or (is_organizer and event.organizer == user):
+            serializer.save(user=serializer.validated_data.get('user', None))
+            return
+
+        # Attendee / Student RSVP
+        serializer.save(
+            user=user,
+            name=user.get_full_name() or user.username,
+            email=user.email,
+            phone_number=user.phone_number or ''
+        )
+
     def perform_update(self, serializer):
         user = self.request.user
         updated_fields = set(serializer.validated_data.keys())
 
-        if user.is_staff:
+        if user.is_staff or serializer.instance.event.organizer == user:
+            if updated_fields.intersection({'event'}):
+                raise PermissionDenied(
+                    "You cannot transfer a guest to another event."
+                )
             serializer.save()
             return
 
-        is_student = user.groups.filter(
-            name='Student'
-        ).exists()
-
-        is_organizer = user.groups.filter(
-            name='Organizer'
-        ).exists()
-
-        if is_student:
+        if serializer.instance.user == user:
             if not updated_fields.issubset({'rsvp_status'}):
                 raise PermissionDenied(
                     "You can only update your RSVP status."
                 )
-
-            serializer.save(user=user)
-            return
-
-        if is_organizer:
-            if updated_fields.intersection({'event', 'user'}):
-                raise PermissionDenied(
-                    "You cannot transfer a guest to another event or user."
-                )
-
             serializer.save()
             return
 
