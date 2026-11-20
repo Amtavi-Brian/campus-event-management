@@ -1,6 +1,16 @@
+import useAuth from '../../hooks/useAuth'
 import '../../styles/common/Navbar.css'
 
-function Navbar({ userName = 'Brian' }) {
+function Navbar({ userName }) {
+  const { user } = useAuth()
+  const displayName =
+    userName ||
+    (user?.first_name
+      ? `${user.first_name} ${user.last_name || ''}`.trim()
+      : user?.username || 'User')
+
+  const initial = displayName.charAt(0).toUpperCase() || 'U'
+
   return (
     <header className="navbar">
       <div className="navbar__search">
@@ -21,8 +31,8 @@ function Navbar({ userName = 'Brian' }) {
           🔔
         </button>
         <div className="navbar__user">
-          <span className="navbar__avatar">{userName.charAt(0)}</span>
-          <span className="navbar__username">{userName}</span>
+          <span className="navbar__avatar">{initial}</span>
+          <span className="navbar__username">{displayName}</span>
         </div>
       </div>
     </header>

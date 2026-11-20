@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
+import useAuth from '../../hooks/useAuth'
 import '../../styles/common/Sidebar.css'
 
 const navItems = [
@@ -10,9 +11,15 @@ const navItems = [
 ]
 
 function Sidebar({ onNavigate }) {
-  const handleLogout = () => {
-    // TODO: wire up to authService once backend integration begins
-    console.log('Log out clicked')
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } finally {
+      navigate('/login')
+    }
   }
 
   return (

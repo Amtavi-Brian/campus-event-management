@@ -6,15 +6,21 @@ const defaultValues = {
   description: '',
   deadline: '',
   status: 'Pending',
+  event: '',
 }
 
 function TaskForm({
   initialValues = defaultValues,
+  events,
   onSubmit,
   onCancel,
   submitLabel = 'Save Task',
 }) {
-  const [formData, setFormData] = useState({ ...defaultValues, ...initialValues })
+  const [formData, setFormData] = useState({
+    ...defaultValues,
+    ...initialValues,
+    event: initialValues.event || (events && events.length > 0 ? String(events[0].id) : ''),
+  })
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -28,6 +34,29 @@ function TaskForm({
 
   return (
     <form onSubmit={handleSubmit} className="task-form">
+      {events && (
+        <div className="form-group">
+          <label htmlFor="event" className="form-label">
+            Event *
+          </label>
+          <select
+            id="event"
+            name="event"
+            required
+            value={formData.event}
+            onChange={handleChange}
+            className="form-select"
+          >
+            <option value="" disabled>Select an event</option>
+            {events.map((evt) => (
+              <option key={evt.id} value={evt.id}>
+                {evt.title}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="form-group">
         <label htmlFor="title" className="form-label">
           Task Title *

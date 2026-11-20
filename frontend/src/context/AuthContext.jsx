@@ -5,6 +5,7 @@ import {
     loginUser,
     logoutUser,
     getUserProfile,
+    updateUserProfile,
 } from '../services/authService';
 
 // Context exports are intentionally colocated with the provider in this module.
@@ -74,6 +75,13 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // Update profile
+    const updateProfile = async (profileData) => {
+        const updated = await updateUserProfile(profileData);
+        setUser((prev) => ({ ...prev, ...updated }));
+        return updated;
+    };
+
     const value = {
         user,
         isLoading,
@@ -81,6 +89,7 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
+        updateProfile,
     };
 
     return (

@@ -6,15 +6,29 @@ const defaultValues = {
   email: '',
   phone: '',
   status: 'Pending',
+  event: '',
 }
 
 function GuestForm({
   initialValues = defaultValues,
+  events,
   onSubmit,
   onCancel,
   submitLabel = 'Save Guest',
 }) {
-  const [formData, setFormData] = useState({ ...defaultValues, ...initialValues })
+  const [formData, setFormData] = useState({
+    ...defaultValues,
+    ...initialValues,
+    phone: initialValues.phone || initialValues.phone_number || '',
+    status:
+      initialValues.status ||
+      (initialValues.rsvp_status === 'ACCEPTED'
+        ? 'Going'
+        : initialValues.rsvp_status === 'NOT_GOING'
+        ? 'Not Going'
+        : 'Pending'),
+    event: initialValues.event || (events && events.length > 0 ? String(events[0].id) : ''),
+  })
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -28,6 +42,29 @@ function GuestForm({
 
   return (
     <form onSubmit={handleSubmit} className="guest-form">
+      {events && (
+        <div className="form-group">
+          <label htmlFor="event" className="form-label">
+            Event *
+          </label>
+          <select
+            id="event"
+            name="event"
+            required
+            value={formData.event}
+            onChange={handleChange}
+            className="form-select"
+          >
+            <option value="" disabled>Select an event</option>
+            {events.map((evt) => (
+              <option key={evt.id} value={evt.id}>
+                {evt.title}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div className="form-group">
         <label htmlFor="name" className="form-label">
           Name *

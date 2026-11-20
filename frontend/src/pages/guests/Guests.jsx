@@ -1,11 +1,41 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import GuestItem from '../../components/guests/GuestItem'
-import { mockGuests } from './mockGuests'
+import { deleteGuest, getGuests } from '../../services/guestService'
 
 function Guests() {
-  const [guests, setGuests] = useState(mockGuests)
+  const [guests, setGuests] = useState([])
   const [search, setSearch] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let isActive = true
+
+    const fetchGuests = async () => {
+      try {
+        setIsLoading(true)
+        setError('')
+        const data = await getGuests()
+        if (isActive) {
+          setGuests(Array.isArray(data) ? data : data.results || [])
+        }
+      } catch (err) {
+        console.error('Failed to load guests:', err)
+        if (isActive) {
+          setError('Unable to load guests. Please try again.')
+        }
+      } finally {
+        if (isActive) setIsLoading(false)
+      }
+    }
+
+    fetchGuests()
+
+    return () => {
+      isActive = false
+    }
+  }, [])
 
   const filteredGuests = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -13,13 +43,20 @@ function Guests() {
     return guests.filter(
       (guest) =>
         guest.name.toLowerCase().includes(query) ||
-        guest.email.toLowerCase().includes(query)
+        guest.email.toLowerCase().includes(query) ||
+        (guest.event_title && guest.event_title.toLowerCase().includes(query))
     )
   }, [guests, search])
 
-  const handleDelete = (id) => {
-    if (window.confirm('Remove this guest?')) {
+  const handleDelete = async (id) => {
+    if (!window.confirm('Remove this guest?')) return
+
+    try {
+      await deleteGuest(id)
       setGuests((prev) => prev.filter((guest) => guest.id !== id))
+    } catch (err) {
+      console.error('Failed to delete guest:', err)
+      alert('Unable to remove guest. Please try again.')
     }
   }
 
@@ -44,7 +81,11 @@ function Guests() {
       </div>
 
       <div className="table-card">
-        {filteredGuests.length > 0 ? (
+        {isLoading ? (
+          <p className="empty-state">Loading guests...</p>
+        ) : error ? (
+          <p className="empty-state" role="alert">{error}</p>
+        ) : filteredGuests.length > 0 ? (
           <table className="data-table">
             <thead>
               <tr>
@@ -66,7 +107,9 @@ function Guests() {
             </tbody>
           </table>
         ) : (
-          <p className="empty-state">No guests match your search.</p>
+          <p className="empty-state">
+            {search ? 'No guests match your search.' : 'No guests available yet.'}
+          </p>
         )}
       </div>
     </div>

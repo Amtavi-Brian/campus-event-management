@@ -1,39 +1,75 @@
 import { useState } from 'react'
+import useAuth from '../../hooks/useAuth'
 import '../../styles/profile/Settings.css'
 
-const initialProfile = {
-  fullName: 'Brian James',
-  email: 'brian.james@example.com',
-  phone: '+254 712 345678',
-  bio: 'A passionate event planner.',
-}
+function SettingsForm({ user, updateProfile }) {
+  const initialName = user?.first_name
+    ? `${user.first_name} ${user.last_name || ''}`.trim()
+    : user?.username || ''
 
-function Settings() {
-  const [formData, setFormData] = useState(initialProfile)
+  const [formData, setFormData] = useState({
+    fullName: initialName,
+    email: user?.email || '',
+    phone: user?.phone_number || '',
+    bio: '',
+  })
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
     setSaved(false)
+    setError('')
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // TODO: wire up to authService/profile API once backend integration begins
-    console.log('Save profile', formData)
-    setSaved(true)
+    setIsSaving(true)
+    setError('')
+    setSaved(false)
+
+    try {
+      const parts = formData.fullName.trim().split(' ')
+      const firstName = parts[0] || ''
+      const lastName = parts.slice(1).join(' ') || ''
+
+      await updateProfile({
+        first_name: firstName,
+        last_name: lastName,
+        email: formData.email,
+        phone_number: formData.phone,
+      })
+
+      setSaved(true)
+    } catch (err) {
+      console.error('Failed to update profile:', err)
+      const data = err.response?.data
+      if (data && typeof data === 'object') {
+        const msgs = Object.entries(data)
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(' ') : v}`)
+          .join(' ')
+        setError(msgs)
+      } else {
+        setError('Unable to save changes. Please try again.')
+      }
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleChangePhoto = () => {
-    // TODO: wire up to file upload once backend integration begins
-    console.log('Change photo clicked')
+    alert('Profile photo upload will be available in an upcoming update.')
   }
 
   const initials = formData.fullName
-    .split(' ')
-    .map((part) => part.charAt(0))
-    .join('')
+    ? formData.fullName
+        .split(' ')
+        .map((part) => part.charAt(0))
+        .join('')
+        .toUpperCase()
+    : 'U'
 
   return (
     <div className="settings-page">
@@ -148,6 +184,8 @@ function Settings() {
             </div>
           </section>
 
+          {error && <p className="auth-error" style={{ marginBottom: '1rem' }}>{error}</p>}
+
           <div className="settings-footer">
             {saved && (
               <span className="settings-saved">
@@ -157,14 +195,11 @@ function Settings() {
             )}
             <div className="settings-footer__buttons">
               <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setFormData(initialProfile)}
+                type="submit"
+                className="btn btn-primary"
+                disabled={isSaving}
               >
-                Reset
-              </button>
-              <button type="submit" className="btn btn-primary">
-                Save Changes
+                {isSaving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
           </div>
@@ -172,6 +207,11 @@ function Settings() {
       </div>
     </div>
   )
+}
+
+function Settings() {
+  const { user, updateProfile } = useAuth()
+  return <SettingsForm key={user?.id || 'guest'} user={user} updateProfile={updateProfile} />
 }
 
 export default Settings

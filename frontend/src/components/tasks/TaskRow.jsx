@@ -2,23 +2,35 @@ import { Link } from 'react-router-dom'
 import EventStatus from '../events/EventStatus'
 
 function TaskRow({ task, onToggle, onDelete }) {
+  const isCompleted =
+    task.status === 'Completed' ||
+    task.status === 'COMPLETED' ||
+    Boolean(task.completed)
+
   return (
     <tr>
       <td style={{ width: '32px' }}>
         <input
           type="checkbox"
-          checked={task.status === 'Completed'}
+          checked={isCompleted}
           onChange={() => onToggle?.(task.id)}
         />
       </td>
       <td>
-        <span
-          className={`data-table__primary-text${
-            task.status === 'Completed' ? ' data-table__primary-text--done' : ''
-          }`}
-        >
-          {task.title}
-        </span>
+        <div>
+          <span
+            className={`data-table__primary-text${
+              isCompleted ? ' data-table__primary-text--done' : ''
+            }`}
+          >
+            {task.title}
+          </span>
+          {task.event_title && (
+            <p className="data-table__secondary-text" style={{ fontSize: '0.8rem', color: '#666', margin: 0 }}>
+              {task.event_title}
+            </p>
+          )}
+        </div>
       </td>
       <td>{task.deadline}</td>
       <td>

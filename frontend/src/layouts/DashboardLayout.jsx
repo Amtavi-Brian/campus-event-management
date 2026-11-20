@@ -3,10 +3,13 @@ import { Outlet } from 'react-router-dom'
 import Sidebar from '../components/common/Sidebar'
 import Navbar from '../components/common/Navbar'
 import BottomNav from '../components/common/BottomNav'
+import useAuth from '../hooks/useAuth'
 import '../styles/layouts/DashboardLayout.css'
 
 function DashboardLayout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { user } = useAuth()
+  const initial = (user?.first_name || user?.username || 'U').charAt(0).toUpperCase()
 
   return (
     <div className="dashboard-layout">
@@ -51,7 +54,7 @@ function DashboardLayout() {
             >
               🔔
             </button>
-            <span className="dashboard-layout__mobile-avatar">B</span>
+            <span className="dashboard-layout__mobile-avatar">{initial}</span>
           </div>
         </header>
 

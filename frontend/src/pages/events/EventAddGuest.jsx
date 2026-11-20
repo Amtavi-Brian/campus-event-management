@@ -1,16 +1,62 @@
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import GuestForm from '../../components/guests/GuestForm'
-import { mockEvents } from './mockEvents'
+import { getEvent } from '../../services/eventService'
+import { createGuest } from '../../services/guestService'
 
 function EventAddGuest() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const event = mockEvents.find((item) => String(item.id) === id)
+  const [event, setEvent] = useState(null)
+  const [error, setError] = useState('')
 
-  const handleSubmit = (formData) => {
-    // TODO: wire up to guestService (scoped to this event) once backend integration begins
-    console.log('Add guest for event', id, formData)
-    navigate(`/dashboard/events/${id}`, { state: { activeTab: 'Guests' } })
+  useEffect(() => {
+    let isActive = true
+    getEvent(id)
+      .then((data) => {
+        if (isActive) setEvent(data)
+      })
+      .catch((err) => {
+        console.error('Failed to load event:', err)
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [id])
+
+  const handleSubmit = async (formData) => {
+    setError('')
+    try {
+      const rsvp =
+        formData.status === 'Going'
+          ? 'ACCEPTED'
+          : formData.status === 'Not Going'
+          ? 'NOT_GOING'
+          : 'PENDING'
+
+      const payload = {
+        event: Number(id),
+        name: formData.name,
+        email: formData.email,
+        phone_number: formData.phone,
+        rsvp_status: rsvp,
+      }
+
+      await createGuest(payload)
+      navigate(`/dashboard/events/${id}`, { state: { activeTab: 'Guests' } })
+    } catch (err) {
+      console.error('Failed to add guest:', err)
+      const data = err.response?.data
+      if (data && typeof data === 'object') {
+        const messages = Object.entries(data)
+          .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(' ') : v}`)
+          .join(' ')
+        setError(messages)
+      } else {
+        setError('Failed to add guest. Please try again.')
+      }
+    }
   }
 
   const handleCancel = () => {
@@ -25,6 +71,7 @@ function EventAddGuest() {
 
       <h1 className="page-title-standalone">Add Guest</h1>
       {event && <p className="page-subtitle">For {event.title}</p>}
+      {error && <p className="empty-state" role="alert">{error}</p>}
 
       <GuestForm onSubmit={handleSubmit} onCancel={handleCancel} submitLabel="Save Guest" />
     </div>

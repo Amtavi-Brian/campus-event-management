@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
+import Protected from './routes/Protected'
 import DashboardLayout from './layouts/DashboardLayout'
 import Dashboard from './pages/dashboard/Dashboard'
 import ComingSoon from './components/common/ComingSoon'
@@ -23,7 +24,14 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      <Route path="/dashboard" element={<DashboardLayout />}>
+      <Route
+        path="/dashboard"
+        element={
+          <Protected>
+            <DashboardLayout />
+          </Protected>
+        }
+      >
         <Route index element={<Dashboard />} />
         <Route path="events" element={<Events />} />
         <Route path="events/new" element={<CreateEvent />} />

@@ -1,8 +1,11 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import useAuth from '../../hooks/useAuth'
 import '../../styles/auth/AuthPage.css'
 
 function Register() {
+  const navigate = useNavigate()
+  const { register, login } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formData, setFormData] = useState({
@@ -12,21 +15,55 @@ function Register() {
     confirmPassword: '',
   })
   const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match')
       return
     }
+
     setError('')
-    // TODO: wire up to auth service once backend integration begins
-    console.log('Register submit', formData)
+    setIsSubmitting(true)
+
+    try {
+      await register({
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+      })
+
+      // Attempt automatic login after registration
+      try {
+        await login({
+          email: formData.email,
+          password: formData.password,
+        })
+        navigate('/dashboard')
+      } catch {
+        navigate('/login', { state: { registered: true } })
+      }
+    } catch (err) {
+      const data = err.response?.data
+      if (typeof data === 'string') {
+        setError(data)
+      } else if (data && typeof data === 'object') {
+        const messages = Object.entries(data)
+          .map(([key, val]) => `${key}: ${Array.isArray(val) ? val.join(' ') : val}`)
+          .join(' | ')
+        setError(messages || 'Registration failed. Please check your information.')
+      } else {
+        setError('Unable to register. Please check your connection and try again.')
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -174,8 +211,12 @@ function Register() {
 
             {error && <p className="auth-page__error">{error}</p>}
 
-            <button type="submit" className="btn btn-primary btn-block">
-              Register
+            <button
+              type="submit"
+              className="btn btn-primary btn-block"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Creating account...' : 'Register'}
             </button>
           </form>
 

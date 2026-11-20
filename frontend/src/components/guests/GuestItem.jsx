@@ -2,18 +2,28 @@ import { Link } from 'react-router-dom'
 import EventStatus from '../events/EventStatus'
 
 function GuestItem({ guest, onDelete }) {
+  const phone = guest.phone || guest.phone_number || '—'
+  const status = guest.rsvp_status || guest.status
+
   return (
     <tr>
       <td>
         <div className="data-table__name-cell">
-          <span className="data-table__avatar">{guest.name.charAt(0)}</span>
-          <span className="data-table__primary-text">{guest.name}</span>
+          <span className="data-table__avatar">{guest.name.charAt(0).toUpperCase()}</span>
+          <div>
+            <span className="data-table__primary-text">{guest.name}</span>
+            {guest.event_title && (
+              <p className="data-table__secondary-text" style={{ fontSize: '0.8rem', color: '#666', margin: 0 }}>
+                {guest.event_title}
+              </p>
+            )}
+          </div>
         </div>
       </td>
       <td>{guest.email}</td>
-      <td>{guest.phone}</td>
+      <td>{phone}</td>
       <td>
-        <EventStatus status={guest.status} />
+        <EventStatus status={status} />
       </td>
       <td className="table-cell--right">
         <div className="data-table__actions">

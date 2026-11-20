@@ -38,11 +38,15 @@ export const logoutUser = async (refresh, access) => {
 
 // Get logged-in user's profile
 export const getUserProfile = async (access) => {
-    const response = await api.get('/accounts/profile/', {
-        headers: {
-            Authorization: `Bearer ${access}`,
-        },
-    });
+    const config = access
+        ? { headers: { Authorization: `Bearer ${access}` } }
+        : {};
+    const response = await api.get('/accounts/profile/', config);
+    return response.data;
+};
 
+// Update logged-in user's profile
+export const updateUserProfile = async (profileData) => {
+    const response = await api.patch('/accounts/profile/', profileData);
     return response.data;
 };
