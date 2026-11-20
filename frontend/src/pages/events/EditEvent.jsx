@@ -1,26 +1,56 @@
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import EventForm from '../../components/events/EventForm'
-import { mockEvents } from './mockEvents'
+import {
+  getCategories,
+  getEvent,
+  getEventErrorMessage,
+  toEventFormValues,
+  toEventPayload,
+  updateEvent,
+} from '../../services/eventService'
 
 function EditEvent() {
   const navigate = useNavigate()
   const { id } = useParams()
-  const existingEvent = mockEvents.find((event) => String(event.id) === id)
+  const [existingEvent, setExistingEvent] = useState(null)
+  const [categories, setCategories] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
 
-  const initialValues = existingEvent
-    ? {
-        title: existingEvent.title,
-        description: existingEvent.description,
-        date: existingEvent.rawDate,
-        time: existingEvent.rawTime,
-        location: existingEvent.location,
-        maxGuests: existingEvent.maxGuests,
-      }
-    : undefined
+  useEffect(() => {
+    let isActive = true
 
-  const handleSubmit = (formData) => {
-    // TODO: wire up to eventService once backend integration begins
-    console.log('Update event', id, formData)
+    Promise.all([getEvent(id), getCategories()])
+      .then(([event, categoryData]) => {
+        if (!isActive) return
+        setExistingEvent(event)
+        setCategories(
+          Array.isArray(categoryData) ? categoryData : categoryData.results || []
+        )
+      })
+      .catch((error) => {
+        console.error(`Failed to load event ${id}:`, error)
+        if (isActive) {
+          setLoadError(getEventErrorMessage(error))
+        }
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false)
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [id])
+
+  const handleSubmit = async (formData) => {
+    try {
+      await updateEvent(id, toEventPayload(formData))
+    } catch (error) {
+      throw new Error(getEventErrorMessage(error), { cause: error })
+    }
+
     navigate(`/dashboard/events/${id}`)
   }
 
@@ -36,9 +66,18 @@ function EditEvent() {
 
       <h1 className="page-title-standalone">Edit Event</h1>
 
-      {existingEvent ? (
+      {isLoading ? (
+        <p className="empty-state">Loading event...</p>
+      ) : loadError ? (
+        <p className="empty-state" role="alert">{loadError}</p>
+      ) : categories.length === 0 ? (
+        <p className="empty-state" role="alert">
+          No event categories are available. Ask an administrator to add one.
+        </p>
+      ) : existingEvent ? (
         <EventForm
-          initialValues={initialValues}
+          initialValues={toEventFormValues(existingEvent)}
+          categories={categories}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           submitLabel="Save Changes"

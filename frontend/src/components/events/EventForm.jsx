@@ -25,10 +25,12 @@ function EventForm({
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const handleChange = (e) => {
     const { name, value } = e.target
 
+    setErrorMessage('')
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -43,6 +45,9 @@ function EventForm({
     try {
       setIsSubmitting(true)
       await onSubmit?.(formData)
+      setErrorMessage('')
+    } catch (error) {
+      setErrorMessage(error.message || 'Unable to save the event. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -50,6 +55,12 @@ function EventForm({
 
   return (
     <form onSubmit={handleSubmit} className="event-form">
+
+      {errorMessage && (
+        <p className="event-form__error" role="alert">
+          {errorMessage}
+        </p>
+      )}
 
       {/* Event Title */}
       <div className="form-group">

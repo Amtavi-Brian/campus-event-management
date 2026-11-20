@@ -41,3 +41,15 @@ class Event(models.Model):
         on_delete=models.PROTECT,
         related_name='events'
     )
+
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    event_date = models.DateField()
+    event_time = models.TimeField()
+    location = models.CharField(max_length=255)
+    maximum_guests = models.PositiveIntegerField(blank=True, null=True)
+    status = models.CharField(
+        max_length=20,
+        choices=EventStatus.choices,
+        default=EventStatus.PLANNING
+    )

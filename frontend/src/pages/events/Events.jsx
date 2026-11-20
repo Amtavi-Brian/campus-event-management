@@ -28,6 +28,7 @@ function Events() {
           ...event,
           date: event.event_date,
           time: event.event_time?.slice(0, 5),
+          maxGuests: event.maximum_guests,
         }))
 
         setEvents(formattedEvents)
