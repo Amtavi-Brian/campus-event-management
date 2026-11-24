@@ -155,3 +155,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
         if obj.groups.filter(name='Organizer').exists():
             return 'ORGANIZER'
         return 'STUDENT'
+
+
+class AssignableUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'email',
+        ]

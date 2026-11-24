@@ -6,10 +6,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from .serializers import LogoutSerializer
-from rest_framework.generics import RetrieveUpdateAPIView
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.permissions import IsAuthenticated, BasePermission
+from .serializers import LogoutSerializer, AssignableUserSerializer
+from rest_framework.generics import RetrieveUpdateAPIView, ListAPIView
+from rest_framework.parsers import (MultiPartParser, FormParser, JSONParser,FormParser, JSONParser)
+from .models import User
 
 # Create your views here.
 
@@ -43,3 +44,24 @@ class UserProfileView(RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+class IsOrganizerOrAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated
+            and (
+                request.user.is_staff
+                or request.user.groups.filter(name='Organizer').exists()
+            )
+        )
+
+
+class AssignableUsersView(ListAPIView):
+    serializer_class = AssignableUserSerializer
+    permission_classes = [IsOrganizerOrAdmin]
+
+    def get_queryset(self):
+        return User.objects.filter(
+            groups__name='Student',
+            is_active=True
+        ).order_by('first_name', 'last_name')

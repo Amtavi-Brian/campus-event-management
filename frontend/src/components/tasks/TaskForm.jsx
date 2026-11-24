@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import '../../styles/tasks/TaskForm.css'
 
@@ -7,11 +8,13 @@ const defaultValues = {
   deadline: '',
   status: 'Pending',
   event: '',
+  assigned_to: '',
 }
 
 function TaskForm({
   initialValues = defaultValues,
   events,
+  users = [],
   onSubmit,
   onCancel,
   submitLabel = 'Save Task',
@@ -19,12 +22,21 @@ function TaskForm({
   const [formData, setFormData] = useState({
     ...defaultValues,
     ...initialValues,
-    event: initialValues.event || (events && events.length > 0 ? String(events[0].id) : ''),
+    event:
+      initialValues.event ||
+      (events && events.length > 0 ? String(events[0].id) : ''),
+    assigned_to: initialValues.assigned_to
+      ? String(initialValues.assigned_to)
+      : '',
   })
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
   }
 
   const handleSubmit = (e) => {
@@ -34,11 +46,14 @@ function TaskForm({
 
   return (
     <form onSubmit={handleSubmit} className="task-form">
+
+      {/* Event Selection */}
       {events && (
         <div className="form-group">
           <label htmlFor="event" className="form-label">
             Event *
           </label>
+
           <select
             id="event"
             name="event"
@@ -47,7 +62,10 @@ function TaskForm({
             onChange={handleChange}
             className="form-select"
           >
-            <option value="" disabled>Select an event</option>
+            <option value="" disabled>
+              Select an event
+            </option>
+
             {events.map((evt) => (
               <option key={evt.id} value={evt.id}>
                 {evt.title}
@@ -57,10 +75,12 @@ function TaskForm({
         </div>
       )}
 
+      {/* Task Title */}
       <div className="form-group">
         <label htmlFor="title" className="form-label">
           Task Title *
         </label>
+
         <input
           id="title"
           name="title"
@@ -73,10 +93,12 @@ function TaskForm({
         />
       </div>
 
+      {/* Description */}
       <div className="form-group">
         <label htmlFor="description" className="form-label">
           Description
         </label>
+
         <textarea
           id="description"
           name="description"
@@ -88,10 +110,12 @@ function TaskForm({
         />
       </div>
 
+      {/* Deadline */}
       <div className="form-group">
         <label htmlFor="deadline" className="form-label">
           Deadline
         </label>
+
         <input
           id="deadline"
           name="deadline"
@@ -102,10 +126,37 @@ function TaskForm({
         />
       </div>
 
+      {/* Assign To */}
+      <div className="form-group">
+        <label htmlFor="assigned_to" className="form-label">
+          Assign To
+        </label>
+
+        <select
+          id="assigned_to"
+          name="assigned_to"
+          value={formData.assigned_to}
+          onChange={handleChange}
+          className="form-select"
+        >
+          <option value="">Unassigned</option>
+
+          {users.map((user) => (
+            <option key={user.id} value={user.id}>
+              {user.first_name || user.last_name
+                ? `${user.first_name} ${user.last_name}`.trim()
+                : user.username}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Status */}
       <div className="form-group">
         <label htmlFor="status" className="form-label">
           Status
         </label>
+
         <select
           id="status"
           name="status"
@@ -118,10 +169,16 @@ function TaskForm({
         </select>
       </div>
 
+      {/* Form Actions */}
       <div className="form-actions">
-        <button type="button" onClick={onCancel} className="btn btn-secondary">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="btn btn-secondary"
+        >
           Cancel
         </button>
+
         <button type="submit" className="btn btn-primary">
           {submitLabel}
         </button>
